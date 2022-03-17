@@ -1,20 +1,6 @@
-<!doctype html>
-<html class="no-js" lang="">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>wakeru</title>
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <!-- Place favicon.ico in the root directory -->
-
-  </head>
-  <body>
-    <h1>welcome to wakeru!</h1>
-    <p>wakeru is an anonymous file uploader for small scale files to share with friends.</p>
-    <p>you don't need an email, username or password to use this service.</p>
-    <p>instead you will get a generated string of random letters and numbers, a hash, that links to the files you have uploaded. to make sure you don't lose that string and still have access to the files you've uploaded, it's best to save the string in a file somewhere, or even better, in a password manger!</p>
-  </body>
-</html>
+{{ define "content" }}
+  <h1>welcome to wakeru!</h1>
+  <p>wakeru is an anonymous file uploader for small scale files to share with friends.</p>
+  <p>you don't need an email, username or password to use this service.</p>
+  <p>instead you will get a generated string of random letters and numbers, a hash, that links to the files you have uploaded. to make sure you don't lose that string and still have access to the files you've uploaded, it's best to save the string in a file somewhere, or even better, in a password manger!</p>
+{{ end }}
