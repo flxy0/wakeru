@@ -1,18 +1,15 @@
 package main
 
 import (
-	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"html/template"
-	"io"
 	"io/ioutil"
-	"math/big"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
-	"time"
+
+	"sr.ht/flxy/wakeru/hashgen"
+	"sr.ht/flxy/wakeru/helpers"
 )
 
 type UploadedFile struct {
@@ -26,8 +23,11 @@ type FileListData struct {
 	Files    []UploadedFile
 }
 
-// Global variable that stores a slice with all the existing directories
-var serveDirs = fetchDirList()
+// Type for Template Files
+type templateFile struct {
+	name     string
+	contents string
+}
 
 // Global variables for the file view templates so they remain cached but still accessible in the function without explicitly passing
 var view_files_tmpl = template.Must(template.ParseFiles("templates/view_files.gohtml"))
@@ -44,36 +44,10 @@ func renderDatalessTemplate(tmpl template.Template) http.HandlerFunc {
 	}
 }
 
-// This function takes care of generating new hashes, creating the directory for it,
-// updating the directory list global variable and sending the hash to the user
-func generated(w http.ResponseWriter, r *http.Request) {
-	currentTime := time.Now().Unix()
-
-	rng := rand.Reader
-	randInt, err := rand.Int(rng, big.NewInt(100000))
-	if err != nil {
-		fmt.Println("some error genereting random int")
-		fmt.Println(err)
-		fmt.Fprintf(w, "There was an error generating!")
-		return
+func renderStaticFile(filepath string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, filepath)
 	}
-
-	modifiedUnixTime := currentTime + randInt.Int64()
-
-	shaHash := sha256.New()
-	io.WriteString(shaHash, strconv.FormatInt(modifiedUnixTime, 10))
-	hashSum := shaHash.Sum(nil)
-
-	err = os.Mkdir(fmt.Sprintf("uploads/%x", hashSum), 0777)
-	if err != nil {
-		fmt.Println("some error creating the hash directory")
-		fmt.Println(err)
-		fmt.Fprintf(w, "There was an error generating!")
-		return
-	}
-	serveDirs = fetchDirList()
-	fmt.Fprintf(w, "here is your fancy new hash:\n%x", hashSum)
-	return
 }
 
 // This function handles the post form from the upload.gohtml
@@ -139,7 +113,7 @@ func handleServeContent(w http.ResponseWriter, r *http.Request) {
 	filename := urlParts[3]
 	var dirMatch string
 
-	for _, v := range serveDirs {
+	for _, v := range helpers.ServeDirs {
 		if strings.HasPrefix(v, userHash) && len(userHash) == 20 {
 			dirMatch = v
 		} else {
@@ -167,7 +141,7 @@ func viewFiles(w http.ResponseWriter, r *http.Request) {
 	if error != nil {
 		fmt.Println(error)
 	}
-	fmt.Printf(r.FormValue("deletion"))
+	fmt.Println(r.FormValue("deletion"))
 
 	if r.FormValue("userHash") != "" {
 		hash := r.FormValue("userHash")
@@ -221,7 +195,7 @@ func deleteFiles(w http.ResponseWriter, r *http.Request) {
 	refererSlice := strings.Split(r.Referer(), "/")
 	userHash := refererSlice[len(refererSlice)-1]
 
-	bodyStr := fmt.Sprintf("%s", body)
+	bodyStr := string(body)
 	formFiles := strings.Split(bodyStr, "&")
 	fileNames := make([]string, len(formFiles))
 
@@ -243,48 +217,37 @@ func deleteFiles(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Files succesfully deleted")
 }
 
-// Simple helper function to fetch a splice with existing directories
-// Mainly used to assign to the serveDirs global variable
-func fetchDirList() []string {
-	dirArr, err := ioutil.ReadDir("uploads/")
-
-	if err != nil {
-		fmt.Println(err)
-		panic("No uploads folder found")
-	}
-
-	dirs := make([]string, len(dirArr))
-	for i, v := range dirArr {
-		dirs[i] = v.Name()
-	}
-
-	return dirs
-}
-
 func main() {
-	var home_tmpl = template.Must(template.ParseFiles("templates/index.gohtml"))
-	var upload_tmpl = template.Must(template.ParseFiles("templates/upload.gohtml"))
-	var gen_tmpl = template.Must(template.ParseFiles("templates/gen.gohtml"))
+	var (
+		// template_list    = []string{"templates/base.gothml", "templates/index.gohtml"}
+		index_tmpl = template.Must(template.ParseFiles("templates/base.gohtml", "templates/index.gohtml"))
+		// templates =      template.Must(template.ParseFiles("templates/base.gohtml"))
+		// index_tmpl, _ = template.Must(base_tmpl.Clone()).ParseFiles("templates/index.gohtml")
+		gen_tmpl = template.Must(template.ParseFiles("templates/base.gohtml", "templates/gen.gohtml"))
+	)
+
+	// template.Must()
 
 	mux := http.NewServeMux()
 
 	// index route
-	mux.HandleFunc("/", renderDatalessTemplate(*home_tmpl))
+	go mux.HandleFunc("/", renderDatalessTemplate(*index_tmpl))
 
-	// hash generation related routes
-	mux.HandleFunc("/generate", renderDatalessTemplate(*gen_tmpl))
-	mux.HandleFunc("/generated", generated)
+	// // hash generation related routes
+	go mux.HandleFunc("/generate", renderDatalessTemplate(*gen_tmpl))
+	go mux.HandleFunc("/generated", hashgen.Generated)
 
-	// upload form and handling of post errors
-	mux.HandleFunc("/upload", renderDatalessTemplate(*upload_tmpl))
-	mux.HandleFunc("/uploaded", uploaded)
+	// // upload form and handling of post errors
+	// go mux.HandleFunc("/upload", renderDatalessTemplate(*upload_tmpl))
+	// go mux.HandleFunc("/uploaded", uploaded)
 
-	// serve uploads
-	mux.HandleFunc("/uploads/", handleServeContent)
+	// // serve uploads
+	// go mux.HandleFunc("/uploads/", handleServeContent)
 
-	// view files corresponding to hash
-	mux.HandleFunc("/view_files/", viewFiles)
-	mux.HandleFunc("/view_files/deletion", deleteFiles)
+	// // view files corresponding to hash
+	// go mux.HandleFunc("/view_files/", viewFiles)
+	// go mux.HandleFunc("/view_files/deletion", deleteFiles)
+	go mux.HandleFunc("/style.css", renderStaticFile("templates/style.css"))
 
 	fmt.Println("now serving on http://0.0.0.0:5050")
 	http.ListenAndServe(":5050", mux)

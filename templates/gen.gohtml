@@ -1,11 +1,6 @@
-<html>
-  <head>
-    <title>wakeru - hash gen</title>
-  </head>
-  <body>
-    <form action="generated"
-          method="post">
-      <input type="submit" name="initGen" value="generate">
-    </form>
-  </body>
-</html>
+{{ define "content" }}
+  <form action="generated"
+        method="post">
+    <input type="submit" name="initGen" value="generate">
+  </form>
+{{ end }}
