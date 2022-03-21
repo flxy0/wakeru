@@ -1,0 +1,15 @@
+{{ define "content" }}
+  <form action="deletion"
+        method="post"
+        id="deletion">
+    <ul>
+    {{range .Files}}
+      <li>
+        <input type="checkbox" id="{{.Name}}" name="{{.Name}}">
+        <label for="{{.Name}}"><a href="{{.URL}}">{{.Name}}</a></label>
+      </li>
+    {{end}}
+    </ul>
+    <input type="submit">
+  </form>
+{{ end }}

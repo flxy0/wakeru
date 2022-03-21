@@ -1,20 +1,13 @@
-<html>
-  <head>
-    <title>wakeru - upload</title>
-  </head>
-  <body>
-    <form enctype="multipart/form-data"
-          action="uploaded"
-          method="post">
-      <div>
-        <input type="text" name="userHash" placeholder="paste your user hash here">
-      </div>
-      <div>
-        <input type="file" name="upFile">
-      </div>
-      <div>
-        <input type="submit" value="upload">
-      </div>
-    </form>
-  </body>
-</html>
+{{ define "content" }}
+  <form enctype="multipart/form-data" action="uploaded" method="post">
+    <div>
+      <input type="text" name="userHash" placeholder="paste your user hash here">
+    </div>
+    <div>
+      <input type="file" name="upFile">
+    </div>
+    <div>
+      <input type="submit" value="upload">
+    </div>
+  </form>
+{{ end }}

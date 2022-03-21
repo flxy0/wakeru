@@ -19,12 +19,6 @@ import (
 // This function takes care of generating new hashes, creating the directory for it,
 // updating the directory list global variable and sending the hash to the user
 func Generated(w http.ResponseWriter, r *http.Request) {
-	// exitWithError := func(err error) http.HandlerFunc {
-	// 	return func(w http.ResponseWriter, r *http.Request) {
-	// 		log.Fatal(err)
-	// 		fmt.Fprint(w, "error generating hash! sorry!")
-	// 	}
-	// }
 	exitWithError := func(err error) {
 		log.Fatalln(err)
 	}
@@ -60,8 +54,8 @@ func Generated(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/generated.gohtml"))
 
-	tmpl_err := tmpl.Execute(w, data)
-	if tmpl_err != nil {
-		log.Fatal(err)
+	tmplErr := tmpl.Execute(w, data)
+	if tmplErr != nil {
+		log.Fatal(tmplErr)
 	}
 }
