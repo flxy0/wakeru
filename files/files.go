@@ -43,7 +43,6 @@ func ViewFiles(w http.ResponseWriter, r *http.Request) {
 	if formHash != "" {
 		http.Redirect(w, r, fmt.Sprintf("/viewfiles/%s", formHash), http.StatusSeeOther)
 	} else if len(userHash) == 0 || userHash == "" {
-		fmt.Println("HUH?!")
 		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/viewfiles.gohtml"))
 
 		tmplErr := tmpl.Execute(w, nil)
@@ -51,7 +50,6 @@ func ViewFiles(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(tmplErr)
 		}
 	} else if len(userHash) > 20 {
-		fmt.Println("is long enough")
 		files, err := ioutil.ReadDir(fmt.Sprintf("uploads/%s/", userHash))
 
 		if err != nil {
@@ -117,6 +115,9 @@ func DeleteFiles(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Files succesfully deleted")
 }
 
+// This function handles the post form from the upload.gohtml
+// It verifies that there's a valid hash and a file present upon submission
+// If not, it will simply display a simple text message informing the user what is wrong
 func Uploaded(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10 << 20)
 

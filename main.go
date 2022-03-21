@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
-	"sr.ht/flxy/wakeru/files"
-	"sr.ht/flxy/wakeru/hashgen"
-	"sr.ht/flxy/wakeru/helpers"
+	"github.com/flxy0/wakeru/files"
+	"github.com/flxy0/wakeru/hashgen"
+	"github.com/flxy0/wakeru/helpers"
 )
 
 // Type for Template Files
@@ -37,10 +37,6 @@ func renderStaticFile(filepath string) http.HandlerFunc {
 	}
 }
 
-// This function handles the post form from the upload.gohtml
-// It verifies that there's a valid hash and a file present upon submission
-// If not, it will simply display a simple text message informing the user what is wrong
-
 // This function takes care of all the content serving
 // It checks whether the URL has the first 20 digits of an existing string
 // and whether the file exists in the corresponding full hash named directory
@@ -51,13 +47,17 @@ func handleServeContent(w http.ResponseWriter, r *http.Request) {
 	var dirMatch string
 
 	for _, v := range helpers.ServeDirs {
-		if strings.HasPrefix(v, userHash) && len(userHash) == 20 {
+		if userHash == v[:20] {
 			dirMatch = v
+			break
 		}
-		// else {
-		// 	fmt.Fprintf(w, "Hash is wrong or doesn't exist")
-		// 	fmt.Println(userHash)
-		// }
+	}
+
+	// If dirMatch doesn't get a value assigned to it, the hash doesn't exist so we need to inform the user
+	if dirMatch == "" {
+		log.Fatal(w, "Hash is wrong or doesn't exist")
+		fmt.Fprintf(w, "Hash is wrong or doesn't exist")
+		return
 	}
 
 	filePath := fmt.Sprintf("uploads/%s/%s", dirMatch, filename)
@@ -70,23 +70,7 @@ func handleServeContent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, fileErr := os.Open(filePath)
-	if fileErr != nil {
-		log.Fatal(fileErr)
-		return
-	}
-
-	fileStats, statErr := file.Stat()
-	if statErr != nil {
-		log.Fatal(statErr)
-	}
-
-	fileBuf := make([]byte, fileStats.Size())
-	file.Read(fileBuf)
-
-	w.Header().Add("Content-Type", mime.TypeByExtension("."+(strings.Split(filename, ".")[1])))
-	w.Write(fileBuf)
-	file.Close()
+	http.ServeFile(w, r, filePath)
 }
 
 func main() {

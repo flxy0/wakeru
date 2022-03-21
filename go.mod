@@ -1,3 +1,3 @@
-module sr.ht/flxy/wakeru
+module github.com/flxy0/wakeru
 
 go 1.18

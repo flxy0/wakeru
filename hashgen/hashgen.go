@@ -13,7 +13,7 @@ import (
 	"text/template"
 	"time"
 
-	"sr.ht/flxy/wakeru/helpers"
+	"github.com/flxy0/wakeru/helpers"
 )
 
 // This function takes care of generating new hashes, creating the directory for it,
