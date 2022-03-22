@@ -14,6 +14,9 @@
     <h3>simple file sharing</h3>
   </header>
   <main>
+    {{ if .Error }}
+    <h2 style="color: #ff5555">{{ .Error }}</h2>
+    {{ end }}
     {{ template "content" .}}
   </main>
 </body>
