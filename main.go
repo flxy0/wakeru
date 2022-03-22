@@ -97,11 +97,10 @@ func main() {
 
 	// view files corresponding to hash
 	go mux.HandleFunc("/viewfiles/", files.ViewFiles)
-	// TODO: handle file deletion via own path probably
 
 	// serve static file(s) if need be
 	go mux.HandleFunc("/style.css", renderStaticFile("templates/style.css"))
 
-	fmt.Println("now serving on http://0.0.0.0:5050")
+	fmt.Println("now running app on http://localhost:5050")
 	http.ListenAndServe(":5050", mux)
 }

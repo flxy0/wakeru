@@ -11,11 +11,3 @@ I would personally consider anything alpha quality at best, so don't rely on it 
 To add to that, this is my first Go project that's not just silly experiments or a simple CLI applications. As such, mistakes, oddities and other ~~stupidities~~ silliness are to be expected. I would be very much appreciate any constructive feedback on how things could be improved in any sort of way!
 
 The idea for this project has been floating around in my head for quite a while and I'm just glad I finally managed to bring it to code!
-
----
-
-TODO:
-- [ ] Finish file deletion flow
-- [ ] Streamline templates and styling
-- [ ] Find solution for custom templates or bake current ones into bin file and make use of a config file for a bit of customisation
-- [ ] Block `/generate` URL path but let hashes be generated through another way still (possibly first created hash == admin account which can still generate)
