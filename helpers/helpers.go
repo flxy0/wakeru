@@ -1,8 +1,8 @@
 package helpers
 
 import (
-	"fmt"
 	"io/ioutil"
+	"log"
 )
 
 // Global variable that stores a slice with all the existing directories
@@ -14,7 +14,7 @@ func FetchDirList() []string {
 	dirArr, err := ioutil.ReadDir("uploads/")
 
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		panic("No uploads folder found")
 	}
 

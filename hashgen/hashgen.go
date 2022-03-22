@@ -20,7 +20,7 @@ import (
 // updating the directory list global variable and sending the hash to the user
 func Generated(w http.ResponseWriter, r *http.Request) {
 	exitWithError := func(err error) {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 
 	currentTime := time.Now().Unix()
@@ -56,6 +56,6 @@ func Generated(w http.ResponseWriter, r *http.Request) {
 
 	tmplErr := tmpl.Execute(w, data)
 	if tmplErr != nil {
-		log.Fatal(tmplErr)
+		log.Println(tmplErr)
 	}
 }
