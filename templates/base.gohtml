@@ -6,12 +6,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>wakeru</title>
   <link rel="stylesheet" href="/style.css">
-  
+  <style>
+    header {
+      padding: 0;
+    }
+    header h2 {
+      font-size: 30px;
+      text-align: left;
+      display: block;
+      width: 100px;
+    }
+    nav {
+      position: absolute;
+      margin-bottom: 0;
+      top: 21px;
+      margin-left: 150px;
+    }
+    nav ul li {
+      padding-left: 0;
+      padding-right: 5px;
+      margin-left: 0;
+    }
+    main {
+      padding-top: 0;
+    }
+    main h1 {
+      margin-top: 0;
+    }
+
+  </style>
 </head>
 <body>
   <header>
-    <h2>wakeru</h2>
-    <h3>simple file sharing</h3>
+    <h2><a href="/">wakeru</a></h2>
+    <nav>
+      <ul class="nav">
+        <li><a href="/upload">upload</a></li>
+        <li><a href="/viewfiles">view files</a></li>
+        <li><a href="/generate">generate user hash</a></li>
+      </ul>
+    </nav>
   </header>
   <main>
     {{ if .Error }}
