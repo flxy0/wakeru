@@ -55,7 +55,7 @@ func handleServeContent(w http.ResponseWriter, r *http.Request) {
 
 	// If dirMatch doesn't get a value assigned to it, the hash doesn't exist so we need to inform the user
 	if dirMatch == "" {
-		log.Fatal(w, "Hash is wrong or doesn't exist")
+		log.Println(w, "Hash is wrong or doesn't exist")
 		fmt.Fprintf(w, "Hash is wrong or doesn't exist")
 		return
 	}
@@ -75,37 +75,29 @@ func handleServeContent(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	var (
-		indexTmpl  = template.Must(template.ParseFiles("templates/base.gohtml", "templates/index.gohtml"))
-		genTmpl    = template.Must(template.ParseFiles("templates/base.gohtml", "templates/gen.gohtml"))
-		uploadTmpl = template.Must(template.ParseFiles("templates/base.gohtml", "templates/upload.gohtml"))
-		// fileViewTmpl = template.Must(template.ParseFiles("templates/base.gohtml", "templates/view_files.gohtml"))
-		// template_list    = []string{"templates/base.gothml", "templates/index.gohtml"}
-		// templates =      template.Must(template.ParseFiles("templates/base.gohtml"))
-		// index_tmpl, _ = template.Must(base_tmpl.Clone()).ParseFiles("templates/index.gohtml")
+		indexTmpl = template.Must(template.ParseFiles("templates/base.gohtml", "templates/index.gohtml"))
+		genTmpl   = template.Must(template.ParseFiles("templates/base.gohtml", "templates/gen.gohtml"))
 	)
-
-	// template.Must()
 
 	mux := http.NewServeMux()
 
 	// index route
 	go mux.HandleFunc("/", renderDatalessTemplate(*indexTmpl))
 
+	// TODO: This could probably be handled like the upload path so there's no need for another url path
 	// hash generation related routes
 	go mux.HandleFunc("/generate", renderDatalessTemplate(*genTmpl))
 	go mux.HandleFunc("/generated", hashgen.Generated)
 
 	// upload form and handling of post errors
-	go mux.HandleFunc("/upload", renderDatalessTemplate(*uploadTmpl))
-	go mux.HandleFunc("/uploaded", files.Uploaded)
+	go mux.HandleFunc("/upload", files.Upload)
 
 	// serve uploads
 	go mux.HandleFunc("/uploads/", handleServeContent)
 
 	// view files corresponding to hash
-	// go mux.HandleFunc("/viewfiles", renderDatalessTemplate(*fileViewTmpl))
 	go mux.HandleFunc("/viewfiles/", files.ViewFiles)
-	// go mux.HandleFunc("/view_files/deletion", deleteFiles)
+	// TODO: handle file deletion via own path probably
 
 	// serve static file(s) if need be
 	go mux.HandleFunc("/style.css", renderStaticFile("templates/style.css"))
