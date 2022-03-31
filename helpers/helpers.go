@@ -1,10 +1,14 @@
 package helpers
 
 import (
+	"embed"
 	"io/ioutil"
 	"log"
 	"os"
 )
+
+//go:embed templates/*.gohtml
+var TemplateDir embed.FS
 
 // Global variable that stores a slice with all the existing directories
 var ServeDirs = FetchDirList()

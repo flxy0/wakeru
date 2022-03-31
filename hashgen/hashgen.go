@@ -21,18 +21,24 @@ import (
 func Generate(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10)
 
-	if r.FormValue("initGen") == "" {
-		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/gen.gohtml"))
+	baseTmpl := template.Must(template.ParseFS(helpers.TemplateDir, "templates/base.gohtml"))
+	genTmpl, genTmplErr := template.Must(baseTmpl.Clone()).ParseFS(helpers.TemplateDir, "templates/gen.gohtml")
+	if genTmplErr != nil {
+		log.Println(genTmplErr)
+	}
 
+	if r.FormValue("initGen") == "" {
 		data := struct {
 			DisableGenPage bool
 			Error          string
+			Hash           string
 		}{
 			DisableGenPage: helpers.NoGenArgPassed(),
 			Error:          "",
+			Hash:           "",
 		}
 
-		tmplErr := tmpl.Execute(w, data)
+		tmplErr := genTmpl.Execute(w, data)
 		if tmplErr != nil {
 			log.Println(tmplErr)
 		}
@@ -70,9 +76,7 @@ func Generate(w http.ResponseWriter, r *http.Request) {
 			Hash:           hashString,
 		}
 
-		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/gen.gohtml"))
-
-		tmplErr := tmpl.Execute(w, data)
+		tmplErr := genTmpl.Execute(w, data)
 		if tmplErr != nil {
 			log.Println(tmplErr)
 		}

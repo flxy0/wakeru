@@ -33,6 +33,10 @@ type FileListData struct {
 	UserHash       string
 }
 
+var baseTmpl = template.Must(template.ParseFS(helpers.TemplateDir, "templates/base.gohtml"))
+
+var listTmpl, listTmplErr = template.Must(baseTmpl.Clone()).ParseFS(helpers.TemplateDir, "templates/filelist.gohtml")
+
 // This function takes care of the view_files view.
 // This view is for seeing which files have been uploaded using specific full(!) hash and deleting them.
 // Initiating deletion flow depends on whether form values exist or not.
@@ -61,7 +65,11 @@ func ViewFiles(w http.ResponseWriter, r *http.Request) {
 	if formHash != "" && len(userHash) < 20 {
 		http.Redirect(w, r, fmt.Sprintf("/viewfiles/%s", formHash), http.StatusSeeOther)
 	} else if len(userHash) == 0 || userHash == "" {
-		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/viewfiles.gohtml"))
+		viewTmpl, viewTmplErr := template.Must(baseTmpl.Clone()).ParseFS(helpers.TemplateDir, "templates/viewfiles.gohtml")
+
+		if viewTmplErr != nil {
+			log.Println(viewTmplErr)
+		}
 
 		data := struct {
 			DisableGenPage bool
@@ -71,7 +79,7 @@ func ViewFiles(w http.ResponseWriter, r *http.Request) {
 			Error:          "",
 		}
 
-		tmpl.Execute(w, data)
+		viewTmpl.Execute(w, data)
 	} else if len(userHash) > 20 {
 		tmplData, errString := computeFileListTmplData(userHash)
 
@@ -80,11 +88,14 @@ func ViewFiles(w http.ResponseWriter, r *http.Request) {
 			tmplData.Error = strings.Join(errList, " & ")
 		}
 
-		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/filelist.gohtml"))
+		if listTmplErr != nil {
+			log.Println(listTmplErr)
+		}
 
-		tmpl.Execute(w, tmplData)
+		listTmpl.Execute(w, tmplData)
 	} else {
-		fmt.Fprintf(w, "uh oh! something went wrong somewhere >_<")
+		// fmt.Fprintf(w, "uh oh! something went wrong somewhere >_<")
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -97,10 +108,14 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 	// We need to parse the multi part form before we can even evaluate what "kind of request" it is
 	r.ParseMultipartForm(10 << 20)
 
+	// Load upload template
+	uploadTmpl, uploadTmplErr := template.Must(baseTmpl.Clone()).ParseFS(helpers.TemplateDir, "templates/upload.gohtml")
+	if uploadTmplErr != nil {
+		log.Println(uploadTmplErr)
+	}
+
 	// If the page isn't loaded with form data from the upload, render regular template.
 	if len(r.PostForm) == 0 {
-		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/upload.gohtml"))
-
 		data := struct {
 			DisableGenPage bool
 			Error          string
@@ -109,7 +124,7 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 			Error:          "",
 		}
 
-		tmplErr := tmpl.Execute(w, data)
+		tmplErr := uploadTmpl.Execute(w, data)
 		if tmplErr != nil {
 			log.Println(tmplErr)
 			return
@@ -159,8 +174,6 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 
 	// Returns template with error message if something went wrong
 	if len(errList) > 0 {
-		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/upload.gohtml"))
-
 		tmplData := struct {
 			DisableGenPage bool
 			Error          string
@@ -169,7 +182,7 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 			Error:          strings.Join(errList, " & "),
 		}
 
-		tmplErr := tmpl.Execute(w, tmplData)
+		tmplErr := uploadTmpl.Execute(w, tmplData)
 		if tmplErr != nil {
 			log.Println(tmplErr)
 		}
@@ -202,19 +215,20 @@ func deleteFiles(w http.ResponseWriter, r *http.Request, userHash string) {
 	}
 
 	tmplData, errString := computeFileListTmplData(userHash)
-	tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/filelist.gohtml"))
+	if listTmplErr != nil {
+		log.Println(listTmplErr)
+	}
 
 	if errString != "" {
 		errList = append(errList, errString)
-		fmt.Println(errList)
 		tmplData.Error = strings.Join(errList, " & ")
-		tmpl.Execute(w, tmplData)
+		listTmpl.Execute(w, tmplData)
 	} else if len(errList) != 0 {
 		tmplData.Error = strings.Join(errList, " & ")
-		tmpl.Execute(w, tmplData)
+		listTmpl.Execute(w, tmplData)
 	} else {
 		tmplData.Feedback = "selected files successfully deleted"
-		tmpl.Execute(w, tmplData)
+		listTmpl.Execute(w, tmplData)
 	}
 	return
 }
