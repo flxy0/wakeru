@@ -4,13 +4,13 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"math/big"
 	"net/http"
 	"os"
 	"strconv"
-	"text/template"
 	"time"
 
 	"github.com/flxy0/wakeru/helpers"
@@ -18,44 +18,53 @@ import (
 
 // This function takes care of generating new hashes, creating the directory for it,
 // updating the directory list global variable and sending the hash to the user
-func Generated(w http.ResponseWriter, r *http.Request) {
-	exitWithError := func(err error) {
-		log.Println(err)
-	}
+func Generate(w http.ResponseWriter, r *http.Request) {
+	r.ParseMultipartForm(10)
 
-	currentTime := time.Now().Unix()
+	if r.FormValue("initGen") == "" {
+		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/gen.gohtml"))
 
-	rng := rand.Reader
-	randInt, err := rand.Int(rng, big.NewInt(100000))
-	if err != nil {
-		exitWithError(err)
-	}
+		tmplErr := tmpl.Execute(w, nil)
+		if tmplErr != nil {
+			log.Println(tmplErr)
+		}
+	} else {
+		currentTime := time.Now().Unix()
 
-	modifiedUnixTime := currentTime + randInt.Int64()
+		rng := rand.Reader
+		randInt, err := rand.Int(rng, big.NewInt(100000))
+		if err != nil {
+			log.Println(err)
+		}
 
-	shaHash := sha256.New()
-	io.WriteString(shaHash, strconv.FormatInt(modifiedUnixTime, 10))
+		modifiedUnixTime := currentTime + randInt.Int64()
 
-	// To actually make use of the hash we need to format it into a string of hex digits
-	hashString := fmt.Sprintf("%x", shaHash.Sum(nil))
+		shaHash := sha256.New()
+		io.WriteString(shaHash, strconv.FormatInt(modifiedUnixTime, 10))
 
-	err = os.Mkdir(fmt.Sprintf("uploads/%s", hashString), 0777)
-	if err != nil {
-		exitWithError(err)
-	}
+		// // To actually make use of the hash we need to format it into a string of hex digits
+		hashString := fmt.Sprintf("%x", shaHash.Sum(nil))
 
-	helpers.ServeDirs = helpers.FetchDirList()
+		err = os.Mkdir(fmt.Sprintf("uploads/%s", hashString), 0777)
+		if err != nil {
+			log.Println(err)
+		}
 
-	data := struct {
-		Hash string
-	}{
-		Hash: hashString,
-	}
+		helpers.ServeDirs = helpers.FetchDirList()
 
-	tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/generated.gohtml"))
+		data := struct {
+			Error string
+			Hash  string
+		}{
+			Error: "",
+			Hash:  hashString,
+		}
 
-	tmplErr := tmpl.Execute(w, data)
-	if tmplErr != nil {
-		log.Println(tmplErr)
+		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/gen.gohtml"))
+
+		tmplErr := tmpl.Execute(w, data)
+		if tmplErr != nil {
+			log.Println(tmplErr)
+		}
 	}
 }

@@ -1,15 +1,20 @@
 {{ define "content" }}
-  <form action="deletion"
-        method="post"
-        id="deletion">
-    <ul>
-    {{range .Files}}
-      <li>
-        <input type="checkbox" id="{{.Name}}" name="{{.Name}}">
-        <label for="{{.Name}}"><a href="{{.URL}}">{{.Name}}</a></label>
-      </li>
-    {{end}}
-    </ul>
-    <input type="submit">
-  </form>
+  {{ if .Feedback }}
+    <h3>{{ .Feedback }}</h3>
+  {{ end }}
+  {{ if not .Files }}
+  <p>there's currently no uploaded files for this hash</p>
+  {{ else }}
+    <form method="post" id="deletion">
+        <ul>
+        {{range .Files}}
+          <li>
+            <input type="checkbox" id="{{.Name}}" name="{{.Name}}">
+            <label for="{{.Name}}"><a href="{{.URL}}">{{.Name}}</a></label>
+          </li>
+        {{end}}
+        </ul>
+        <input type="submit" name="deletion" value="delete selected">
+    </form>
+  {{ end }}
 {{ end }}

@@ -74,20 +74,15 @@ func handleServeContent(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	var (
-		indexTmpl = template.Must(template.ParseFiles("templates/base.gohtml", "templates/index.gohtml"))
-		genTmpl   = template.Must(template.ParseFiles("templates/base.gohtml", "templates/gen.gohtml"))
-	)
+	indexTmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/index.gohtml"))
 
 	mux := http.NewServeMux()
 
 	// index route
 	go mux.HandleFunc("/", renderDatalessTemplate(*indexTmpl))
 
-	// TODO: This could probably be handled like the upload path so there's no need for another url path
 	// hash generation related routes
-	go mux.HandleFunc("/generate", renderDatalessTemplate(*genTmpl))
-	go mux.HandleFunc("/generated", hashgen.Generated)
+	go mux.HandleFunc("/generate", hashgen.Generate)
 
 	// upload form and handling of post errors
 	go mux.HandleFunc("/upload", files.Upload)

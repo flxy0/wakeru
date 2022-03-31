@@ -1,6 +1,11 @@
 {{ define "content" }}
-  <form action="generated"
-        method="post">
-    <input type="submit" name="initGen" value="generate">
-  </form>
+  {{ if .Hash }}
+    <h3>here's your hash:</h3>
+    <code style="font-size: 1.5rem;">{{ .Hash }}</code>
+    <p>please keep this in a safe place! preferrably a password manager or a similarly secure storage so you can copy and paste it back when you're uploading something!</p>
+  {{ else }}
+    <form action="generate" method="post">
+      <input type="submit" name="initGen" value="generate hash">
+    </form>
+  {{ end }}
 {{ end }}
