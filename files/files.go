@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/flxy0/wakeru/helpers"
 )
 
 // -----------------------------------------------------------------------------------------
@@ -24,10 +26,11 @@ type UploadedFile struct {
 
 // File List Template Data struct
 type FileListData struct {
-	Error    string
-	Feedback string
-	Files    []UploadedFile
-	UserHash string
+	DisableGenPage bool
+	Error          string
+	Feedback       string
+	Files          []UploadedFile
+	UserHash       string
 }
 
 // This function takes care of the view_files view.
@@ -59,7 +62,16 @@ func ViewFiles(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, fmt.Sprintf("/viewfiles/%s", formHash), http.StatusSeeOther)
 	} else if len(userHash) == 0 || userHash == "" {
 		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/viewfiles.gohtml"))
-		tmpl.Execute(w, nil)
+
+		data := struct {
+			DisableGenPage bool
+			Error          string
+		}{
+			DisableGenPage: helpers.NoGenArgPassed(),
+			Error:          "",
+		}
+
+		tmpl.Execute(w, data)
 	} else if len(userHash) > 20 {
 		tmplData, errString := computeFileListTmplData(userHash)
 
@@ -69,6 +81,7 @@ func ViewFiles(w http.ResponseWriter, r *http.Request) {
 		}
 
 		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/filelist.gohtml"))
+
 		tmpl.Execute(w, tmplData)
 	} else {
 		fmt.Fprintf(w, "uh oh! something went wrong somewhere >_<")
@@ -88,7 +101,15 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 	if len(r.PostForm) == 0 {
 		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/upload.gohtml"))
 
-		tmplErr := tmpl.Execute(w, nil)
+		data := struct {
+			DisableGenPage bool
+			Error          string
+		}{
+			DisableGenPage: helpers.NoGenArgPassed(),
+			Error:          "",
+		}
+
+		tmplErr := tmpl.Execute(w, data)
 		if tmplErr != nil {
 			log.Println(tmplErr)
 			return
@@ -141,9 +162,11 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/upload.gohtml"))
 
 		tmplData := struct {
-			Error string
+			DisableGenPage bool
+			Error          string
 		}{
-			Error: strings.Join(errList, " & "),
+			DisableGenPage: helpers.NoGenArgPassed(),
+			Error:          strings.Join(errList, " & "),
 		}
 
 		tmplErr := tmpl.Execute(w, tmplData)
@@ -221,7 +244,8 @@ func computeFileListTmplData(userHash string) (fileListData FileListData, errStr
 	}
 
 	return FileListData{
-		UserHash: userHash,
-		Files:    fileList,
+		DisableGenPage: helpers.NoGenArgPassed(),
+		UserHash:       userHash,
+		Files:          fileList,
 	}, errStr
 }

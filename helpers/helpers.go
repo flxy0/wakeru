@@ -3,6 +3,7 @@ package helpers
 import (
 	"io/ioutil"
 	"log"
+	"os"
 )
 
 // Global variable that stores a slice with all the existing directories
@@ -24,4 +25,12 @@ func FetchDirList() []string {
 	}
 
 	return dirs
+}
+
+func NoGenArgPassed() bool {
+	if len(os.Args) > 1 && os.Args[1] == "-nogen" {
+		return true
+	} else {
+		return false
+	}
 }

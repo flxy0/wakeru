@@ -24,7 +24,15 @@ func Generate(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("initGen") == "" {
 		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/gen.gohtml"))
 
-		tmplErr := tmpl.Execute(w, nil)
+		data := struct {
+			DisableGenPage bool
+			Error          string
+		}{
+			DisableGenPage: helpers.NoGenArgPassed(),
+			Error:          "",
+		}
+
+		tmplErr := tmpl.Execute(w, data)
 		if tmplErr != nil {
 			log.Println(tmplErr)
 		}
@@ -53,11 +61,13 @@ func Generate(w http.ResponseWriter, r *http.Request) {
 		helpers.ServeDirs = helpers.FetchDirList()
 
 		data := struct {
-			Error string
-			Hash  string
+			DisableGenPage bool
+			Error          string
+			Hash           string
 		}{
-			Error: "",
-			Hash:  hashString,
+			DisableGenPage: helpers.NoGenArgPassed(),
+			Error:          "",
+			Hash:           hashString,
 		}
 
 		tmpl := template.Must(template.ParseFiles("templates/base.gohtml", "templates/gen.gohtml"))

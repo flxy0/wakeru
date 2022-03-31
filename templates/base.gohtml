@@ -43,7 +43,9 @@
       <ul class="nav">
         <li><a href="/upload">upload</a></li>
         <li><a href="/viewfiles">view files</a></li>
-        <li><a href="/generate">generate user hash</a></li>
+        {{ if not .DisableGenPage }}
+          <li><a href="/generate">generate user hash</a></li>
+        {{ end }}
       </ul>
     </nav>
   </header>
