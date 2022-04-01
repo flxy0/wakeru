@@ -1,0 +1,8 @@
+# Name of the instance. Will be the page title and shown on the homepage.
+Name = "wakeru"
+
+# Path to small logo image shown on the index site.
+Image = ""
+
+# Allow generation of new hashes. Change to false to disable.
+Generate =  true

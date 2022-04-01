@@ -3,18 +3,21 @@ package main
 import (
 	"embed"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"text/template"
 
+	"github.com/flxy0/wakeru/config"
 	"github.com/flxy0/wakeru/files"
 	"github.com/flxy0/wakeru/hashgen"
 	"github.com/flxy0/wakeru/helpers"
 )
 
-// Generate a copy of the templates dir for compiling.
+// Generate a copy of the templates dir in helplers/ for compiling.
+//go:generate rm -r ./helpers/templates
 //go:generate cp -r ./templates/ ./helpers/templates
 
 // Type for Template Files
@@ -33,26 +36,30 @@ func renderIndexPage(w http.ResponseWriter, r *http.Request) {
 	baseTmplRender := template.Must(template.ParseFS(helpers.TemplateDir, "templates/base.gohtml"))
 	indexTmplRender, err := template.Must(baseTmplRender.Clone()).ParseFS(helpers.TemplateDir, "templates/index.gohtml")
 
-	if err != nil {
-		log.Println(err)
-	}
+	helpers.LogErr(err)
 
 	data := struct {
-		DisableGenPage bool
-		Error          string
+		InstanceName string
+		AllowGenPage bool
+		Error        string
 	}{
-		DisableGenPage: helpers.NoGenArgPassed(),
-		Error:          "",
+		InstanceName: config.ConfigInstanceName,
+		AllowGenPage: config.ConfigAllowGeneration,
+		Error:        "",
 	}
 
 	tmplErr := indexTmplRender.Execute(w, data)
-	if tmplErr != nil {
-		log.Println(tmplErr)
-	}
+	helpers.LogErr(tmplErr)
+}
+
+func embedFsSub() http.FileSystem {
+	subFs, err := fs.Sub(cssFile, "templates")
+	helpers.LogErr(err)
+	return http.FS(subFs)
 }
 
 func genRedirect(w http.ResponseWriter, r *http.Request) {
-	// In case the "-nogen" flag is passed, navigating to /generate manually will redirect back to the main page.
+	// In case the Generate is set to false in the config, navigating to /generate manually will redirect back to the main page.
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
@@ -89,15 +96,35 @@ func handleServeContent(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, filePath)
 }
 
+func handleArgs() {
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "init":
+			handleInitArg()
+		}
+	}
+}
+
+func handleInitArg() {
+	config.GenerateDefaultConfigInCurrentDir()
+	fmt.Println("config created in current directory!")
+	fmt.Println("feel free to edit the parameters and start the application by omiting the init")
+	// Exit application because init is not supposed to run the server right away.
+	os.Exit(0)
+}
+
 func main() {
+	handleArgs()
+	config.ParseConfig()
+
 	mux := http.NewServeMux()
 
 	// index route
 	go mux.HandleFunc("/", renderIndexPage)
 
 	// hash generation related routes
-	// can be disabled by passing `-nogen` arg
-	if !helpers.NoGenArgPassed() {
+	// can be disabled by setting Generate to false in config.toml
+	if config.ConfigAllowGeneration {
 		go mux.HandleFunc("/generate", hashgen.Generate)
 	} else {
 		go mux.HandleFunc("/generate", genRedirect)
@@ -113,8 +140,9 @@ func main() {
 	go mux.HandleFunc("/viewfiles/", files.ViewFiles)
 
 	// serve static file(s) if need be
-	go mux.Handle("/style.css", http.FileServer(http.FS(cssFile)))
+	go mux.Handle("/style.css", http.FileServer(embedFsSub()))
 
+	fmt.Println("----- server starting -----")
 	fmt.Println("now running app on http://localhost:5050")
 	http.ListenAndServe(":5050", mux)
 }

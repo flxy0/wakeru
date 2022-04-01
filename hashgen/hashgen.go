@@ -6,50 +6,47 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"math/big"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/flxy0/wakeru/config"
 	"github.com/flxy0/wakeru/helpers"
 )
 
 // This function takes care of generating new hashes, creating the directory for it,
 // updating the directory list global variable and sending the hash to the user
 func Generate(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(config.ConfigAllowGeneration)
 	r.ParseMultipartForm(10)
 
 	baseTmpl := template.Must(template.ParseFS(helpers.TemplateDir, "templates/base.gohtml"))
 	genTmpl, genTmplErr := template.Must(baseTmpl.Clone()).ParseFS(helpers.TemplateDir, "templates/gen.gohtml")
-	if genTmplErr != nil {
-		log.Println(genTmplErr)
-	}
+	helpers.LogErr(genTmplErr)
 
 	if r.FormValue("initGen") == "" {
 		data := struct {
-			DisableGenPage bool
-			Error          string
-			Hash           string
+			AllowGenPage bool
+			Error        string
+			Hash         string
+			InstanceName string
 		}{
-			DisableGenPage: helpers.NoGenArgPassed(),
-			Error:          "",
-			Hash:           "",
+			AllowGenPage: config.ConfigAllowGeneration,
+			Error:        "",
+			Hash:         "",
+			InstanceName: config.ConfigInstanceName,
 		}
 
 		tmplErr := genTmpl.Execute(w, data)
-		if tmplErr != nil {
-			log.Println(tmplErr)
-		}
+		helpers.LogErr(tmplErr)
 	} else {
 		currentTime := time.Now().Unix()
 
 		rng := rand.Reader
 		randInt, err := rand.Int(rng, big.NewInt(100000))
-		if err != nil {
-			log.Println(err)
-		}
+		helpers.LogErr(err)
 
 		modifiedUnixTime := currentTime + randInt.Int64()
 
@@ -60,25 +57,23 @@ func Generate(w http.ResponseWriter, r *http.Request) {
 		hashString := fmt.Sprintf("%x", shaHash.Sum(nil))
 
 		err = os.Mkdir(fmt.Sprintf("uploads/%s", hashString), 0777)
-		if err != nil {
-			log.Println(err)
-		}
+		helpers.LogErr(err)
 
 		helpers.ServeDirs = helpers.FetchDirList()
 
 		data := struct {
-			DisableGenPage bool
-			Error          string
-			Hash           string
+			AllowGenPage bool
+			Error        string
+			Hash         string
+			InstanceName string
 		}{
-			DisableGenPage: helpers.NoGenArgPassed(),
-			Error:          "",
-			Hash:           hashString,
+			AllowGenPage: config.ConfigAllowGeneration,
+			Error:        "",
+			Hash:         hashString,
+			InstanceName: config.ConfigInstanceName,
 		}
 
 		tmplErr := genTmpl.Execute(w, data)
-		if tmplErr != nil {
-			log.Println(tmplErr)
-		}
+		helpers.LogErr(tmplErr)
 	}
 }

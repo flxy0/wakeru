@@ -2,3 +2,4 @@ uploads/
 current-hashes.txt
 .vscode
 helpers/templates/
+config.toml

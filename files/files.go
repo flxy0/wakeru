@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flxy0/wakeru/config"
 	"github.com/flxy0/wakeru/helpers"
 )
 
@@ -26,11 +27,12 @@ type UploadedFile struct {
 
 // File List Template Data struct
 type FileListData struct {
-	DisableGenPage bool
-	Error          string
-	Feedback       string
-	Files          []UploadedFile
-	UserHash       string
+	AllowGenPage bool
+	Error        string
+	Feedback     string
+	Files        []UploadedFile
+	InstanceName string
+	UserHash     string
 }
 
 var baseTmpl = template.Must(template.ParseFS(helpers.TemplateDir, "templates/base.gohtml"))
@@ -49,9 +51,7 @@ func ViewFiles(w http.ResponseWriter, r *http.Request) {
 	var errList []string
 
 	formError := r.ParseForm()
-	if formError != nil {
-		log.Println(formError)
-	}
+	helpers.LogErr(formError)
 
 	formHash := r.FormValue("userHash")
 	deleteVal := r.FormValue("deletion")
@@ -67,16 +67,16 @@ func ViewFiles(w http.ResponseWriter, r *http.Request) {
 	} else if len(userHash) == 0 || userHash == "" {
 		viewTmpl, viewTmplErr := template.Must(baseTmpl.Clone()).ParseFS(helpers.TemplateDir, "templates/viewfiles.gohtml")
 
-		if viewTmplErr != nil {
-			log.Println(viewTmplErr)
-		}
+		helpers.LogErr(viewTmplErr)
 
 		data := struct {
-			DisableGenPage bool
-			Error          string
+			AllowGenPage bool
+			Error        string
+			InstanceName string
 		}{
-			DisableGenPage: helpers.NoGenArgPassed(),
-			Error:          "",
+			AllowGenPage: config.ConfigAllowGeneration,
+			Error:        "",
+			InstanceName: config.ConfigInstanceName,
 		}
 
 		viewTmpl.Execute(w, data)
@@ -88,9 +88,7 @@ func ViewFiles(w http.ResponseWriter, r *http.Request) {
 			tmplData.Error = strings.Join(errList, " & ")
 		}
 
-		if listTmplErr != nil {
-			log.Println(listTmplErr)
-		}
+		helpers.LogErr(listTmplErr)
 
 		listTmpl.Execute(w, tmplData)
 	} else {
@@ -110,25 +108,22 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 
 	// Load upload template
 	uploadTmpl, uploadTmplErr := template.Must(baseTmpl.Clone()).ParseFS(helpers.TemplateDir, "templates/upload.gohtml")
-	if uploadTmplErr != nil {
-		log.Println(uploadTmplErr)
-	}
+	helpers.LogErr(uploadTmplErr)
 
 	// If the page isn't loaded with form data from the upload, render regular template.
 	if len(r.PostForm) == 0 {
 		data := struct {
-			DisableGenPage bool
-			Error          string
+			AllowGenPage bool
+			Error        string
+			InstanceName string
 		}{
-			DisableGenPage: helpers.NoGenArgPassed(),
-			Error:          "",
+			AllowGenPage: config.ConfigAllowGeneration,
+			Error:        "",
+			InstanceName: config.ConfigInstanceName,
 		}
 
 		tmplErr := uploadTmpl.Execute(w, data)
-		if tmplErr != nil {
-			log.Println(tmplErr)
-			return
-		}
+		helpers.LogErr(tmplErr)
 		return
 	}
 
@@ -175,17 +170,17 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 	// Returns template with error message if something went wrong
 	if len(errList) > 0 {
 		tmplData := struct {
-			DisableGenPage bool
-			Error          string
+			AllowGenPage bool
+			Error        string
+			InstanceName string
 		}{
-			DisableGenPage: helpers.NoGenArgPassed(),
-			Error:          strings.Join(errList, " & "),
+			AllowGenPage: config.ConfigAllowGeneration,
+			Error:        strings.Join(errList, " & "),
+			InstanceName: config.ConfigInstanceName,
 		}
 
 		tmplErr := uploadTmpl.Execute(w, tmplData)
-		if tmplErr != nil {
-			log.Println(tmplErr)
-		}
+		helpers.LogErr(tmplErr)
 
 	} else {
 		filePathParts := strings.Split(onDiskFile.Name(), "/")
@@ -215,9 +210,7 @@ func deleteFiles(w http.ResponseWriter, r *http.Request, userHash string) {
 	}
 
 	tmplData, errString := computeFileListTmplData(userHash)
-	if listTmplErr != nil {
-		log.Println(listTmplErr)
-	}
+	helpers.LogErr(listTmplErr)
 
 	if errString != "" {
 		errList = append(errList, errString)
@@ -258,8 +251,9 @@ func computeFileListTmplData(userHash string) (fileListData FileListData, errStr
 	}
 
 	return FileListData{
-		DisableGenPage: helpers.NoGenArgPassed(),
-		UserHash:       userHash,
-		Files:          fileList,
+		AllowGenPage: config.ConfigAllowGeneration,
+		UserHash:     userHash,
+		Files:        fileList,
+		InstanceName: config.ConfigInstanceName,
 	}, errStr
 }
