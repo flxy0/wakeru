@@ -17,7 +17,7 @@ import (
 )
 
 // Generate a copy of the templates dir in helplers/ for compiling.
-//go:generate rm -r ./helpers/templates
+//go:generate rm -rf ./helpers/templates
 //go:generate cp -r ./templates/ ./helpers/templates
 
 // Type for Template Files
