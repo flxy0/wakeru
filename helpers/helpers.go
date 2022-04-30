@@ -35,3 +35,24 @@ func LogErr(err error) {
 		log.Println(err)
 	}
 }
+
+func LogErrorAndAppendToErrList(err error, errStr string, errList []string) ([]string, bool) {
+	additErr := false
+	if err != nil {
+		log.Println(err)
+		errList = append(errList, errStr)
+		additErr = true
+	} else if errStr != "" {
+		errList = append(errList, errStr)
+	}
+	return errList, additErr
+}
+
+func LogErrAndReturnErrString(err error, errStr string) string {
+	if err != nil {
+		log.Println(err)
+		return errStr
+	} else {
+		return ""
+	}
+}

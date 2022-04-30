@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -138,18 +137,12 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 
 	// Checks existing directories to see if the directory corresponding to the hash is present
 	_, err := ioutil.ReadDir(folderPath)
-	if err != nil {
-		log.Println(err)
-		errList = append(errList, "ERROR: no hash like that exists")
-	}
+	errList, _ = helpers.LogErrorAndAppendToErrList(err, "ERROR: no hash like that exists", errList)
 
 	// Reads the file POSTed through the form so we can write it an actual file on disk.
 	file, header, err := r.FormFile("upFile")
-	if err != nil {
-		log.Println(err)
-		errList = append(errList, "ERROR: no file uploaded")
-	}
 	defer file.Close()
+	errList, _ = helpers.LogErrorAndAppendToErrList(err, "ERROR: no file uploaded", errList)
 
 	// Creates a (not quite) temporary file to parse the bytes of the uploaded file into and store it on the disk.
 	nameWithTimestamp := fmt.Sprintf("%d-%s", time.Now().Unix(), header.Filename)
@@ -158,9 +151,9 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 	defer onDiskFile.Close()
 	io.Copy(onDiskFile, file)
 
-	if err != nil {
-		log.Println(err)
-		errList = append(errList, "ERROR: couldn't write file")
+	var fileWriteError bool
+	errList, fileWriteError = helpers.LogErrorAndAppendToErrList(err, "ERROR: couldn't write file", errList)
+	if fileWriteError == true {
 		os.Remove(onDiskFile.Name())
 	}
 
@@ -231,10 +224,7 @@ func computeFileListTmplData(userHash string) (fileListData FileListData, errStr
 	files, err := ioutil.ReadDir(fmt.Sprintf("uploads/%s/", userHash))
 	errString := ""
 
-	if err != nil {
-		log.Println(err)
-		errString = "ERROR: there was an error retrieving files! are you sure you got the right hash?"
-	}
+	errStr = helpers.LogErrAndReturnErrString(err, "ERROR: there was an error retrieving files! are you sure you got the right hash?")
 
 	fileList := make([]UploadedFile, len(files))
 	if errString == "" {
